@@ -2,25 +2,149 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  /* --foreground: #171717; */
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-inter: var(--font-inter);
+  --text-heading-1: clamp(2.75rem, 5.5vw, 4.25rem);
+  --text-heading-1--line-height: 102px;
+  --text-heading-1--letter-spacing: 0;
+  --text-heading-2: clamp(2.25rem, 4.5vw, 3.5rem);
+  --text-heading-2--line-height: 84px;
+  --text-heading-2--letter-spacing: 0;
+  --text-heading-3: clamp(1.75rem, 3.5vw, 2.875rem);
+  --text-heading-3--line-height: 69px;
+  --text-heading-3--letter-spacing: 0;
+  --text-heading-4: clamp(1.5rem, 3vw, 2.375rem);
+  --text-heading-4--line-height: 57px;
+  --text-heading-4--letter-spacing: 0;
+  --text-heading-5: clamp(1.25rem, 2.5vw, 2rem);
+  --text-heading-5--line-height: 48px;
+  --text-heading-5--letter-spacing: 0;
+  --text-heading-6: clamp(1.125rem, 2vw, 1.625rem);
+  --text-heading-6--line-height: 39px;
+  --text-heading-6--letter-spacing: 0;
+  --text-heading-7: clamp(1rem, 1.5vw, 1.375rem);
+  --text-heading-7--line-height: 33px;
+  --text-heading-7--letter-spacing: 0;
+  --text-body-1: clamp(1rem, 1.3vw, 1.125rem);
+  --text-body-1--line-height: 27px;
+  --text-body-1--letter-spacing: 0;
+  --text-body-2: clamp(0.875rem, 1.1vw, 1rem);
+  --text-body-2--line-height: 24px;
+  --text-body-2--letter-spacing: 0;
+  --text-body-3: clamp(0.75rem, 1vw, 0.875rem);
+  --text-body-3--line-height: 21px;
+  --text-body-3--letter-spacing: 0;
+  --text-body-4: clamp(0.6875rem, 0.9vw, 0.75rem);
+  --text-body-4--line-height: 18px;
+  --text-body-4--letter-spacing: 0;
+  --text-body-5: clamp(0.5625rem, 0.8vw, 0.625rem);
+  --text-body-5--line-height: 15px;
+  --text-body-5--letter-spacing: 0;
+
+  --color-primary-100: #AEDBA0;
+  --color-primary-200: #86C970;
+  --color-primary-300: #5FB444;
+  --color-primary-400: #468432;
+  --color-primary-500: #284B1D;
+  --color-primary-10: #4684321A;
+
+  --color-secondary-100: #CCEBB8;
+  --color-secondary-200: #9AD872;
+  --color-secondary-300: #78CB42;
+  --color-secondary-400: #5BA32D;
+  --color-secondary-500: #417320;
+  --color-secondary-10: #9AD8721A;
+
+  --color-tertiary-100: #FFF7C8;
+  --color-tertiary-200: #FFEF91;
+  --color-tertiary-300: #FFE446;
+  --color-tertiary-400: #FAD600;
+  --color-tertiary-10: #FFEF911A;
+  --color-tertiary-50: #FFEF9180;
+
+  --color-accent-100: #FFDFB9;
+  --color-accent-200: #FFC074;
+  --color-accent-300: #FFA02E;
+  --color-accent-400: #E87F00;
+  --color-accent-500: #A35900;
+  --color-accent-10: #FFA02E1A;
+  --color-accent-50: #FFA02E80;
+
+  --color-red-100: #FB3748;
+  --color-red-200: #D00416;
+  --color-red-10: #FB37481A;
+
+  --color-yellow-100: #FFDB43;
+  --color-yellow-200: #DFB400;
+  --color-yellow-10: #FFDB431A;
+
+  --color-green-100: #84EBB4;
+  --color-green-200: #1FC16B;
+  --color-green-10: #1FC16B1A;
+
+  --color-neutral-100: #EDE7F9;
+  --color-neutral-200: #D2C3EF;
+  --color-neutral-300: #B9A2E6;
+  --color-neutral-400: #A78AE0;
+  --color-neutral-500: #8C66D6;
+  --color-neutral-600: #7548CE;
+  --color-neutral-700: #5B2FB1;
+  --color-neutral-800: #442485;
+  --color-neutral-900: #2D1858;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+} */
+
+@utility box-shadow-custom {
+    --box-shadow-x: 0px;
+    --box-shadow-y: 0px;
+    --box-shadow-blur: 4px;
+    --box-shadow-spread: 0px;
+    --box-shadow-color: rgb(0 0 0 / 25%);
+
+    box-shadow:
+        var(--box-shadow-x)
+        var(--box-shadow-y)
+        var(--box-shadow-blur)
+        var(--box-shadow-spread)
+        var(--box-shadow-color);
+}
+
+@utility box-shadow-x-* {
+    --box-shadow-x: calc(--value(integer) * 1px);
+    --box-shadow-x: --value([length]);
+}
+
+@utility box-shadow-y-* {
+    --box-shadow-y: calc(--value(integer) * 1px);
+    --box-shadow-y: --value([length]);
+}
+
+@utility box-shadow-blur-* {
+    --box-shadow-blur: calc(--value(integer) * 1px);
+    --box-shadow-blur: --value([length]);
+}
+
+@utility box-shadow-spread-* {
+    --box-shadow-spread: calc(--value(integer) * 1px);
+    --box-shadow-spread: --value([length]);
+}
+
+@utility box-shadow-color-* {
+    --box-shadow-color: --value(--color-*, [color]);
+    --box-shadow-color: --alpha(--value(--color-*) / calc(--modifier(integer) * 1%));
+    --box-shadow-color: --alpha(--value([color]) / calc(--modifier(integer) * 1%));
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
