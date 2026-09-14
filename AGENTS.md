@@ -6,4 +6,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
+every time you need to be fix ui, alway make sure you didn't change the ui that i've make. you be enable to change the styling of tailwind only if i explicitly ask you to do it. 
+
 <!-- END:nextjs-agent-rules -->

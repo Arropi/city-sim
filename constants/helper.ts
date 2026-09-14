@@ -1,3 +1,5 @@
+import { MapItems } from "@/types";
+
 export const MADIUN_OSM_RELATION_METADATA = {
   relationId: 9676370,
   adminLevel: 5,
@@ -41,3 +43,100 @@ export const MADIUN_GEO = {
     maxLng: MADIUN_OSM_RELATION_METADATA.bounds.maxLng,
   },
 };
+
+export const MAP_ITEMS: MapItems[] = [
+  {
+    name: "Jumlah RTLH",
+    data: {
+      value: 15,
+      satuan: "percentage"
+    },
+    description: "Unit rumah tidak layak huni",
+    icon: "Home",
+  },
+  {
+    name: "Kepadatan Bangunan",
+    data: {
+      value: 216.007,
+    },
+    description: "Unit bangunan / km²",
+    icon: "Building",
+  },
+  {
+    name: "Kepadatan Bangunan Vertikal",
+    data: {
+      value: 3489.8,
+    },
+    description: "Unit bertingkat / km²",
+    icon: "Building2",
+  },
+  {
+    name: "Cakupan RTLH",
+    data: {
+      value: 18.4,
+      satuan: "percentage"
+    },
+    description: "Persentase penanganan RTLH",
+    icon: "Percent",
+  },
+  {
+    name: "Drainase",
+    data: {
+      value: 86.5,
+      satuan: "percentage"
+    },
+    description: "Kondisi jaringan drainase baik",
+    icon: "Waves",
+  },
+  {
+    name: "Pengelolaan Air Limbah",
+    data: {
+      value: 82.4,
+      satuan: "percentage"
+    },
+    description: "Akses pengolahan limbah layak",
+    icon: "Recycle",
+  },
+  {
+    name: "Akses Air Bersih",
+    data: {
+      value: 96.8,
+      satuan: "percentage"
+    },
+    description: "Cakupan layanan air minum perpipaan",
+    icon: "Droplets",
+  },
+  {
+    name: "Jumlah Hydrant",
+    data: {
+      value: 48,
+      satuan: "unit"
+    },
+    description: "Titik hydrant aktif damkar",
+    icon: "Flame",
+  },
+  {
+    name: "Jumlah Penduduk",
+    data: {
+      value: 201.540,
+      satuan: "jiwa"
+    },
+    description: "Total jiwa penduduk terdata",
+    icon: "Users",
+  },
+  {
+    name: "Kepadatan Penduduk",
+    data: {
+      value: 6.065,
+      satuan: "jiwa/km²"
+    },
+    description: "Jiwa per km²",
+    icon: "UserCheck",
+  },
+];
+
+export const INFORMASI_PERUMAHAN_ITEMS: string[] = [
+  "Informasi mengenai kondisi fisik dan kelayakan perumahan.",
+  "Data ketersediaan sarana dan prasarana lingkungan.",
+  "Panduan navigasi dan pemantauan titik lokasi pada peta.",
+];

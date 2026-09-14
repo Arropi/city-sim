@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Map as LeafletMapType } from "leaflet";
@@ -7,11 +7,16 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import LayerPanel from "@/components/layer-panel";
+import { useMapContext } from "@/hooks/useMapContext";
+import GridBuilding from "@/components/grid-building";
+import type { CityBoundaries } from "@/lib/utils";
 
 // Fix default marker icon issue in Next.js / Leaflet
 const DefaultIcon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -19,9 +24,20 @@ const DefaultIcon = L.icon({
   shadowSize: [41, 41],
 });
 L.Marker.prototype.options.icon = DefaultIcon;
+interface LeafleatMapProps {
+  boundariesCity?: CityBoundaries | null;
+}
 
-export default function LeafletMap() {
+export default function LeafletMap({ boundariesCity }: LeafleatMapProps) {
   const [map, setMap] = useState<LeafletMapType | null>(null);
+  const { setMainMap } = useMapContext();
+
+  useEffect(() => {
+    setMainMap(map);
+    return () => {
+      setMainMap(null);
+    };
+  }, [map, setMainMap]);
 
   const handleZoomIn = () => {
     map?.zoomIn();
@@ -50,11 +66,24 @@ export default function LeafletMap() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={MADIUN_GEO.CENTER}>
-          <Popup>
-            A pretty CSS3 popup. <br /> Easily customizable.
-          </Popup>
-        </Marker>
+        <LayerPanel />
+        {boundariesCity && boundariesCity.length > 0 && (
+          <GridBuilding
+            type="polygon"
+            buildings={"bangunan"}
+            popup={false}
+            props={{
+              positions: boundariesCity,
+              color: "#2563eb",
+              fill: false,
+              weight: 3.0,
+              dashArray: "8, 6",
+              lineCap: "round",
+              lineJoin: "round",
+              interactive: false,
+            }}
+          />
+        )}
       </MapContainer>
 
       <div className="absolute bottom-8 right-8  flex flex-col rounded-lg bg-accent-300 border border-accent-400 shadow-md overflow-hidden">
@@ -81,5 +110,3 @@ export default function LeafletMap() {
     </section>
   );
 }
-
-
