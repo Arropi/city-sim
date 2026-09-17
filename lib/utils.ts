@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-import { Home,Building, Building2, Percent, Waves, Recycle, Droplets, Flame, Users, UserCheck } from "lucide-react";
+import { Home, Building, Building2, Percent, Waves, Recycle, Droplets, Flame, Users, UserCheck, Trash2 } from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -19,8 +19,9 @@ export function getIcon(iconName: string) {
     Flame,
     Users,
     UserCheck,
+    Trash2,
   }
-  return IconMap[iconName as keyof typeof IconMap];
+  return IconMap[iconName as keyof typeof IconMap] || Home;
 }
 
 import type { LatLngExpression } from "leaflet";

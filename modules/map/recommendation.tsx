@@ -29,7 +29,7 @@ function MapClickHandler({ onClick }: { onClick: () => void }) {
 }
 
 export default function RecommendationPanel() {
-  const [map, setMap] = useState<LeafletMapType | null>(null);
+  const [, setMap] = useState<LeafletMapType | null>(null);
   const { flyTo } = useMapContext();
 
   const markerPosition: [number, number] = MADIUN_GEO.CENTER;

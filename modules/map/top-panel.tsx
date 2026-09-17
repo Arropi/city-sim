@@ -44,19 +44,8 @@ const LAPISAN_OPTIONS: { label: string; value: MapLayer; icon: string }[] = [
   },
 ];
 
-const getIcon = (icon: string) => {
-  const IconMap = {
-    Eye,
-    Rocket,
-    Layers2Icon,
-  };
-  return IconMap[icon as keyof typeof IconMap];
-};
-
 export default function TopPanel() {
   const { mode, setMode, layer, setLayer } = useMapContext();
-  const ModeIcon = getIcon(MODE_OPTIONS.find((item) => item.value === mode)?.icon || "Eye")
-  const LayerIcon = getIcon(LAPISAN_OPTIONS.find((item)=> item.value == layer)?.icon || "Layers2Icon")
   return (
     <section className="absolute flex flex-row top-2 right-3 gap-2">
       <Select value={MODE_OPTIONS.find((item) => item.value === mode)?.label} onValueChange={(v) => { setMode(v as MapMode) }}>
@@ -65,8 +54,12 @@ export default function TopPanel() {
             "bg-white box-shadow-custom border-none rounded-xl px-4 py-2.5"
           }
         >
-          <ModeIcon className="size-4 text-red-200" />
-          <SelectValue />
+          {mode === "build" ? (
+            <Rocket className="size-4 text-red-200" />
+          ) : (
+            <Eye className="size-4 text-red-200" />
+          )}
+          <SelectValue className={"text-body-3 font-normal"} />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup className={"bg-white"}>
@@ -86,14 +79,14 @@ export default function TopPanel() {
             "bg-white box-shadow-custom border-none rounded-xl px-4 py-2.5"
           }
         >
-          <LayerIcon className="size-4 text-tertiary-400" />
-          <SelectValue />
+          <Layers2Icon className="size-4 text-tertiary-400" />
+          <SelectValue className={"text-body-3 font-normal"}/>
         </SelectTrigger>
         <SelectContent>
           <SelectGroup className={"bg-white"}>
             {LAPISAN_OPTIONS.map((item) => {
               return (
-                <SelectItem key={item.value} value={item.value}>
+                <SelectItem key={item.value} value={item.value} className={"text-body-3 font-normal"}>
                   {item.label}
                 </SelectItem>
               );
@@ -102,7 +95,7 @@ export default function TopPanel() {
         </SelectContent>
       </Select>
       <PopupPanel />
-      <Button className={"bg-white box-shadow-custom border-none"}>
+      <Button className={"bg-white box-shadow-custom border-none text-body-3 font-normal hover:bg-neutral-200"}>
         <Image width={16} height={16} alt="Panduan" src={"/icons/notepad.svg"} className="size-4 text-accent-400"/>
         Panduan
       </Button>

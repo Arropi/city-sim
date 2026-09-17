@@ -17,7 +17,7 @@ export default function PopupPanel() {
       <Dialog>
         <DialogTrigger
           render={
-            <Button className={"bg-white box-shadow-custom border-none"}>
+            <Button className={"bg-white box-shadow-custom border-none text-body-3 font-normal hover:bg-neutral-200"}>
               <InfoIcon className="text-secondary-400" />
               Informasi Perumahan
             </Button>
