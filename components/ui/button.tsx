@@ -3,13 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[12px] border-2 border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        orange: "bg-accent-300 border-accent-400 hover:bg-accent-400 active:bg-accent-400 active:border-accent-500",
-        green: "bg-secondary-300 border-primary-400 hover:bg-secondary-400 active:bg-secondary-400 active:border-secondary-500",
-        yellow: "bg-tertiary-300 border-tertiary-400 hover:bg-tertiary-400 active:bg-tertiary-400 active:border-tertiary-500",
+        orange:
+          "bg-accent-300 border-accent-400 hover:bg-accent-400 data-[active=true]:bg-accent-400 data-[active=true]:border-accent-500",
+        green:
+          "bg-secondary-300 border-primary-400 hover:bg-secondary-400 data-[active=true]:bg-secondary-400 data-[active=true]:border-secondary-500",
+        yellow:
+          "bg-tertiary-300 border-tertiary-400 hover:bg-tertiary-400 data-[active=true]:bg-tertiary-400 data-[active=true]:border-tertiary-500",
         red: "bg-red text-red-foreground hover:bg-red/80",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
@@ -22,7 +25,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        sm: "px-3.5 py-2 gap-1 rounded-[min(var(--radius-md),12px)] text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "px-2 py-1.5 gap-1 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
         md: "px-4 py-2.5 gap-1.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         lg: "px-[18px] py-2.5 gap-1.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xl: "px-5 py-3 gap-1.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
@@ -51,7 +54,8 @@ function Button({
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-active="false"
+      className={cn(buttonVariants({ variant, size, className, }))}
       {...props}
     />
   )
