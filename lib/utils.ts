@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-import { Home, Building, Building2, Percent, Waves, Recycle, Droplets, Flame, Users, UserCheck, Trash2 } from "lucide-react";
+import { Home, Building, Building2, Percent, Waves, Recycle, Droplets, Flame, Users, UserCheck, Trash2, Trees } from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -20,6 +20,8 @@ export function getIcon(iconName: string) {
     Users,
     UserCheck,
     Trash2,
+    Trees,
+    WavePlus: Waves,
   }
   return IconMap[iconName as keyof typeof IconMap] || Home;
 }
@@ -61,3 +63,48 @@ export function parseGeoJSONCoordinates(
 
   return reverseCoords(rawCoords) as CityBoundaries;
 }
+
+/**
+ * Memformat angka kepadatan penduduk menjadi format ribuan ringkas (k).
+ * Contoh:
+ * - 6040 -> "6.04k jiwa" (atau "6.04k" jika includeUnit = false)
+ * - 6000 -> "6k jiwa" (atau "6k" jika includeUnit = false)
+ * - 6071 -> "6.07k jiwa"
+ */
+export function formatDensity(
+  value: number | string | null | undefined,
+  includeUnit = true
+): string {
+  if (value == null || value === "") {
+    return includeUnit ? "0k jiwa" : "0k";
+  }
+
+  // Jika berupa string yang sudah berformat 'k'
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/[0-9.]+\s*k(\s*jiwa)?/i.test(trimmed)) {
+      if (!includeUnit) {
+        return trimmed.replace(/\s*jiwa$/i, "").trim();
+      }
+      return trimmed.toLowerCase().includes("jiwa") ? trimmed : `${trimmed} jiwa`;
+    }
+  }
+
+  const num =
+    typeof value === "number"
+      ? value
+      : parseFloat(String(value).replace(/,/g, ""));
+
+  if (isNaN(num) || num <= 0) {
+    return includeUnit ? "0k jiwa" : "0k";
+  }
+
+  // Jika angka dalam skala ribuan (misal >= 1000: 6040 -> 6.04, 6000 -> 6)
+  const numInK = num >= 1000 ? num / 1000 : num;
+
+  // Format hingga 2 desimal tanpa trailing zero yang tidak perlu
+  const formatted = parseFloat(numInK.toFixed(2));
+
+  return includeUnit ? `${formatted}k jiwa` : `${formatted}k`;
+}
+

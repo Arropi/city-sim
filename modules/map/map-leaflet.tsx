@@ -3,15 +3,23 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Map as LeafletMapType } from "leaflet";
 import { MADIUN_GEO } from "@/constants/helper";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LayerPanel from "@/components/layer-panel";
 import { useMapContext } from "@/hooks/useMapContext";
 import GridBuilding from "@/components/grid-building";
-import type { CityBoundaries } from "@/lib/utils";
-import { getBuildingsByGridIds, type CityGrid, type UndergroundNetworkData } from "@/app/map/[slugid]/actions";
+import { parseGeoJSONCoordinates, type CityBoundaries } from "@/lib/utils";
+import { getBuildingsByGridIds, type CityGrid, type UndergroundNetworkData, type RiverData } from "@/app/map/[slugid]/actions";
+import {
+  getBuildingCentroid,
+  getSinglePolygonPoints,
+  translatePolygon,
+  checkBuildingOverlap,
+  checkRiverProximity,
+  checkTpaProximity,
+} from "@/lib/spatial-utils";
 
 // Fix default marker icon issue in Next.js / Leaflet
 const DefaultIcon = L.icon({
@@ -29,16 +37,103 @@ interface LeafleatMapProps {
   boundariesCity?: CityBoundaries | null;
   cityGrids?: CityGrid[];
   drainase?: UndergroundNetworkData[];
+  rivers?: RiverData[];
+}
+
+function MapBuildClickHandler() {
+  const {
+    mode,
+    buildMode,
+    selectedHouse,
+    buildings,
+    rivers,
+    setRelocationTarget,
+    setRelocationStatus,
+    addBuildingPoint,
+  } = useMapContext();
+
+  useMapEvents({
+    click(e) {
+      if (mode !== "build") return;
+
+      // Mode Pembangunan: Tambahkan titik koordinat baru saat klik peta
+      if (buildMode === "pembangunan") {
+        addBuildingPoint([e.latlng.lat, e.latlng.lng]);
+        return;
+      }
+
+      // Mode Relokasi: Tetapkan target koordinat relokasi
+      if (buildMode === "relokasi" && selectedHouse) {
+        const targetCoords: [number, number] = [e.latlng.lat, e.latlng.lng];
+        setRelocationTarget(targetCoords);
+
+        const poly = getSinglePolygonPoints(selectedHouse.geom);
+        const currentCentroid = getBuildingCentroid(selectedHouse.geom);
+        if (poly.length < 3 || !currentCentroid) return;
+
+        const translatedPoly = translatePolygon(poly, currentCentroid, targetCoords);
+
+        // 1. Cek overlap dengan bangunan lain
+        const overlapResult = checkBuildingOverlap(translatedPoly, buildings, selectedHouse.id);
+
+        // 2. Cek jarak ke bibir sungai (<= 3 meter)
+        const riverResult = checkRiverProximity(translatedPoly, rivers, 3);
+
+        // 3. Cek jarak ke TPA (<= 150 meter)
+        const tpaResult = checkTpaProximity(targetCoords, buildings, 150);
+
+        const notes: string[] = [];
+        if (overlapResult.isOverlap) {
+          notes.push("Overlap dengan bangunan lain: tidak dapat dipindahkan.");
+        }
+        if (riverResult.isNearRiver) {
+          notes.push(
+            `Terlalu dekat bibir sungai (${riverResult.minDistance.toFixed(1)} m <= 3 m).`
+          );
+        }
+        if (tpaResult.isNearTpa) {
+          notes.push("Sangat dekat dengan TPA: tidak mendapatkan akses air bersih & limbah.");
+        }
+
+        setRelocationStatus({
+          hasTarget: true,
+          isOverlap: overlapResult.isOverlap,
+          overlappingBuildingName: overlapResult.overlappingBuilding?.name || null,
+          isNearRiver: riverResult.isNearRiver,
+          riverDistance: riverResult.minDistance,
+          isNearTpa: tpaResult.isNearTpa,
+          tpaDistance: tpaResult.minDistance,
+          canRelocate: !overlapResult.isOverlap, // Konfirmasi tidak dapat dilakukan jika overlap
+          notes,
+        });
+      }
+    },
+  });
+
+  return null;
 }
 
 export default function LeafletMap({
   boundariesCity,
   cityGrids,
   drainase,
+  rivers,
 }: LeafleatMapProps) {
   const [map, setMap] = useState<LeafletMapType | null>(null);
   const fetchedGridIdsRef = useRef<Set<string>>(new Set());
-  const { setMainMap, buildings, setBuildings, setCityGrids } = useMapContext();
+  const { setMainMap, buildings, setBuildings, setCityGrids, setDrainase, setRivers } = useMapContext();
+
+  useEffect(() => {
+    if (rivers && rivers.length > 0) {
+      setRivers(rivers);
+    }
+  }, [rivers, setRivers]);
+
+  useEffect(() => {
+    if (drainase && drainase.length > 0) {
+      setDrainase(drainase);
+    }
+  }, [drainase, setDrainase]);
 
   useEffect(() => {
     if (cityGrids && cityGrids.length > 0) {
@@ -103,9 +198,16 @@ export default function LeafletMap({
       // Panggil Server Action untuk mengambil data bangunan
       getBuildingsByGridIds(newGridIds).then((newBuildings) => {
         if (newBuildings && newBuildings.length > 0) {
+          // Poin 1 Solusi: Pre-calculate koordinat spasial segera saat data diterima
+          const precalculated = newBuildings.map((b) => {
+            (b as unknown as { _parsedPositions?: CityBoundaries | null })._parsedPositions =
+              parseGeoJSONCoordinates(b.geom);
+            return b;
+          });
+
           setBuildings((prev) => {
             const existingIds = new Set(prev.map((b) => b.id));
-            const toAdd = newBuildings.filter((b) => !existingIds.has(b.id));
+            const toAdd = precalculated.filter((b) => !existingIds.has(b.id));
             return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
           });
         }
@@ -148,7 +250,6 @@ export default function LeafletMap({
         maxBounds={MADIUN_GEO.BOUNDS}
         maxBoundsViscosity={1.0} // Mengunci peta agar tidak bisa digeser keluar batas resmi Kota Madiun
         zoomControl={false}
-        scrollWheelZoom={false}
         preferCanvas={true} // Akselerasi grafis HTML5 Canvas untuk ribuan poligon
         className="w-full h-full z-0 cursor-crosshair"
       >
@@ -156,7 +257,8 @@ export default function LeafletMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <LayerPanel buildings={buildings} drainase={drainase} />
+        <MapBuildClickHandler />
+        <LayerPanel buildings={buildings} drainase={drainase} rivers={rivers} />
         {boundariesCity && boundariesCity.length > 0 && (
           <GridBuilding
             type="polygon"
@@ -182,7 +284,7 @@ export default function LeafletMap({
           size="icon"
           onClick={handleZoomIn}
           aria-label="Zoom in"
-          className="rounded-none bg-neutral-100 hover:bg-neutral-200 active:bg-accent-500 text-neutral-900 border-neutral-100 ring-neutral-100"
+          className="rounded-none bg-neutral-100 hover:bg-neutral-200 active:bg-accent-500 text-neutral-900 border-neutral-100 ring-neutral-100 ring-0 border-none"
         >
           <PlusIcon className="size-4" />
         </Button>
@@ -192,7 +294,7 @@ export default function LeafletMap({
           size="icon"
           onClick={handleZoomOut}
           aria-label="Zoom out"
-          className="rounded-none bg-neutral-100 hover:bg-neutral-200 active:bg-accent-500 text-neutral-900 border-neutral-100 ring-neutral-100"
+          className="rounded-none bg-neutral-100 hover:bg-neutral-200 active:bg-accent-500 text-neutral-900 border-neutral-100 ring-neutral-100 ring-0 border-none"
         >
           <MinusIcon className="size-4" />
         </Button>

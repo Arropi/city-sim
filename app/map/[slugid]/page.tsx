@@ -19,6 +19,7 @@ export default async function Page({ params }: PageProps) {
   ]);
 
   const boundaries = parseGeoJSONCoordinates(mapData?.boundary);
+  const rivers = mapData?.rivers || [];
 
   return (
     <>
@@ -26,6 +27,7 @@ export default async function Page({ params }: PageProps) {
         boundariesCity={boundaries}
         cityGrids={cityGrids}
         drainase={drainase}
+        rivers={rivers}
       />
       <SidebarMap
         title={mapData?.name || "Kota Madiun"}

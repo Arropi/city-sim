@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDensity } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -85,10 +85,10 @@ export const CarouselCard = React.memo(function CarouselCard<
 
   // Format tampilan kepadatan
   const formattedDensity = React.useMemo(() => {
-    if (typeof item.density === "number") {
-      return `${item.density}k jiwa`;
+    if (typeof item.density === "string" && item.density.toLowerCase().includes("k")) {
+      return item.density;
     }
-    return item.density;
+    return formatDensity(item.density);
   }, [item.density]);
 
   return (
