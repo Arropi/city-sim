@@ -11,6 +11,8 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import BuildingMode from "./building-mode";
 import { useMapContext } from "@/hooks/useMapContext";
+import { calculatePolygonAreaM2 } from "@/lib/spatial-utils";
+import { BUILDING_TYPE, isDrainaseType } from "@/constants/helper";
 
 const ITEM_BG_COLORS = [
   "bg-[#34C7591A]",
@@ -46,8 +48,36 @@ export function SidebarBuild({
     selectedHouse,
     setSelectedHouse,
     renovateBuilding,
-    reconstructBuilding,
+    relocationTarget,
+    setRelocationTarget,
+    relocationStatus,
+    setRelocationStatus,
+    relocateBuilding,
+    selectedBuildType,
+    buildingFloors,
+    newBuildingPoints,
+    resetNewBuildingPoints,
+    removeLastBuildingPoint,
+    createNewBuilding,
+    pembangunanStatus,
   } = useMapContext();
+
+  const currentBuildType = BUILDING_TYPE.find(
+    (item) => item.id === selectedBuildType
+  ) || {
+    id: selectedBuildType,
+    label: "Bangunan",
+    category: "Hunian",
+    layer: "bangunan",
+  };
+
+  const isRth = currentBuildType.id === "rth";
+  const isDrainase = isDrainaseType(currentBuildType.id);
+  const canHaveFloors = !isRth && !isDrainase;
+  const areaM2 =
+    newBuildingPoints.length >= 3
+      ? Math.round(calculatePolygonAreaM2(newBuildingPoints))
+      : 0;
 
   const handleConfirmRenovasi = () => {
     if (!selectedHouse) return;
@@ -55,10 +85,9 @@ export function SidebarBuild({
     setSelectedHouse(null);
   };
 
-  const handleConfirmRekonstruksi = () => {
-    if (!selectedHouse) return;
-    reconstructBuilding(selectedHouse.id);
-    setSelectedHouse(null);
+  const handleConfirmRelokasi = () => {
+    if (!selectedHouse || !relocationTarget || !relocationStatus.canRelocate) return;
+    relocateBuilding(selectedHouse.id, relocationTarget);
   };
 
   return (
@@ -81,9 +110,8 @@ export function SidebarBuild({
           onClick={() => {
             const next = buildMode === "renovasi" ? null : "renovasi";
             setBuildMode(next);
-            if (next !== "renovasi") {
-              setSelectedHouse(null);
-            }
+            setSelectedHouse(null);
+            resetNewBuildingPoints();
           }}
           className={cn(
             "flex-1 box-shadow-custom box-shadow-x-2 box-shadow-y-4 box-shadow-blur-2 box-shadow-color-[#232323]/15 cursor-pointer transition-all",
@@ -98,6 +126,7 @@ export function SidebarBuild({
             const next = buildMode === "relokasi" ? null : "relokasi";
             setBuildMode(next);
             setSelectedHouse(null);
+            resetNewBuildingPoints();
           }}
           className={cn(
             "flex-1 box-shadow-custom box-shadow-x-2 box-shadow-y-4 box-shadow-blur-2 box-shadow-color-[#232323]/15 cursor-pointer transition-all",
@@ -110,18 +139,17 @@ export function SidebarBuild({
           variant={"green"}
           size={"sm"}
           onClick={() => {
-            const next = buildMode === "rekonstruksi" ? null : "rekonstruksi";
+            const next = buildMode === "pembangunan" ? null : "pembangunan";
             setBuildMode(next);
-            if (next !== "rekonstruksi") {
-              setSelectedHouse(null);
-            }
+            setSelectedHouse(null);
+            resetNewBuildingPoints();
           }}
           className={cn(
             "flex-1 box-shadow-custom box-shadow-x-2 box-shadow-y-4 box-shadow-blur-2 box-shadow-color-[#232323]/15 cursor-pointer transition-all",
-            buildMode === "rekonstruksi" && "ring-2 ring-primary-500 font-bold brightness-95"
+            buildMode === "pembangunan" && "ring-2 ring-primary-500 font-bold brightness-95"
           )}
         >
-          Rekonstruksi
+          Pembangunan
         </Button>
       </div>
 
@@ -147,20 +175,76 @@ export function SidebarBuild({
         </div>
       )}
 
-      {buildMode === "rekonstruksi" && (
+      {buildMode === "pembangunan" && (
         <div className="mt-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-primary-10 border border-primary-200 text-body-5 text-neutral-800">
           <div className="flex items-center gap-1.5 truncate">
             <span className="size-2 shrink-0 rounded-full bg-primary-400 animate-pulse" />
             <span className="truncate">
-              {selectedHouse
-                ? `Terpilih: ${selectedHouse.name || `Bangunan #${selectedHouse.id}`}`
-                : "Mode Rekonstruksi: Klik bangunan di peta"}
+              {isDrainase ? (
+                newBuildingPoints.length === 0
+                  ? `Mode Pembangunan: Tentukan 2 titik jalur ${currentBuildType.label} (titik awal & akhir)`
+                  : newBuildingPoints.length === 1
+                  ? `Titik dibuat: 1 dari 2 titik (Klik titik akhir di peta)`
+                  : `Titik dibuat: 2 titik (Jalur jaringan siap dibangun)`
+              ) : (
+                newBuildingPoints.length === 0
+                  ? `Mode Pembangunan: Klik di peta untuk membuat titik ${currentBuildType.label} (min. 3 titik)`
+                  : `Titik dibuat: ${newBuildingPoints.length} titik${
+                      newBuildingPoints.length >= 3
+                        ? ` (Luas: ${areaM2} m²)`
+                        : " (Butuh minimal 3 titik)"
+                    }`
+              )}
+            </span>
+          </div>
+          {newBuildingPoints.length > 0 && (
+            <button
+              type="button"
+              onClick={resetNewBuildingPoints}
+              className="text-[11px] text-neutral-500 hover:text-neutral-900 underline shrink-0 cursor-pointer ml-1"
+            >
+              Reset Titik
+            </button>
+          )}
+        </div>
+      )}
+
+      {buildMode === "relokasi" && (
+        <div className="mt-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-accent-10 border border-accent-200 text-body-5 text-neutral-800">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="size-2 shrink-0 rounded-full bg-accent-400 animate-pulse" />
+            <span className="truncate">
+              {!selectedHouse
+                ? "Mode Relokasi: Klik rumah di peta yang ingin dipindahkan"
+                : !relocationTarget
+                ? `Terpilih: ${selectedHouse.name || `Rumah #${selectedHouse.id}`} (Klik area kosong di peta)`
+                : relocationStatus.isOverlap
+                ? "Lokasi tidak valid: Overlap dengan bangunan lain"
+                : relocationStatus.isNearRiver
+                ? "Peringatan: Berjarak ≤ 3m dari bibir sungai"
+                : relocationStatus.isNearTpa
+                ? "Lokasi dekat TPA (tanpa akses air/limbah)"
+                : `Lokasi siap untuk ${selectedHouse.name || `Rumah #${selectedHouse.id}`}`}
             </span>
           </div>
           {selectedHouse && (
             <button
               type="button"
-              onClick={() => setSelectedHouse(null)}
+              onClick={() => {
+                setSelectedHouse(null);
+                setRelocationTarget(null);
+                setRelocationStatus({
+                  hasTarget: false,
+                  isOverlap: false,
+                  overlappingBuildingName: null,
+                  isNearRiver: false,
+                  riverDistance: null,
+                  isNearTpa: false,
+                  tpaDistance: null,
+                  canRelocate: false,
+                  notes: [],
+                });
+              }}
               className="text-[11px] text-neutral-500 hover:text-neutral-900 underline shrink-0 cursor-pointer ml-1"
             >
               Batal
@@ -202,28 +286,138 @@ export function SidebarBuild({
         </div>
       )}
 
-      {buildMode === "rekonstruksi" && selectedHouse && (
+      {buildMode === "pembangunan" && newBuildingPoints.length > 0 && (
         <div className="fixed bottom-8 right-24 z-50 flex items-center gap-2 bg-white/95 backdrop-blur-sm p-2 pl-3.5 rounded-2xl border border-neutral-200 shadow-xl animate-in fade-in slide-in-from-bottom-3 duration-200">
           <div className="flex flex-col pr-1">
-            <span className="text-body-5 font-medium text-neutral-500">Rekonstruksi Bangunan</span>
-            <span className="text-body-3 font-bold text-neutral-900">
-              {selectedHouse.name || `Bangunan #${selectedHouse.id}`}
+            <span className="text-body-5 font-medium text-neutral-500">
+              Pembangunan {currentBuildType.label}
+              {canHaveFloors && ` • ${buildingFloors} Lantai`}
             </span>
+            <span className="text-body-3 font-bold text-neutral-900">
+              {isDrainase
+                ? `${newBuildingPoints.length} / 2 Titik Jalur Utilitas`
+                : newBuildingPoints.length >= 3
+                ? `${areaM2} m² (${newBuildingPoints.length} Titik)`
+                : `${newBuildingPoints.length} Titik (Minimal 3 Titik)`}
+            </span>
+            {pembangunanStatus.isOverlap ? (
+              <span className="text-[11px] font-semibold text-red-600">
+                Overlap bangunan ({pembangunanStatus.overlappingBuildingName || "lain"}): Tidak dapat dibangun
+              </span>
+            ) : newBuildingPoints.length < (isDrainase ? 2 : 3) ? (
+              <span className="text-[11px] font-medium text-amber-600">
+                {isDrainase
+                  ? "Klik 1 titik lagi di peta sebagai titik akhir (outlet)"
+                  : `Klik ${3 - newBuildingPoints.length} titik lagi di peta`}
+              </span>
+            ) : pembangunanStatus.isNearRiver ? (
+              <span className="text-[11px] font-semibold text-amber-600">
+                Peringatan: Berjarak ≤ 3 meter dari bibir sungai
+              </span>
+            ) : pembangunanStatus.isNearTpa ? (
+              <span className="text-[11px] font-semibold text-purple-600">
+                Catatan: Dekat TPA (Tanpa akses air bersih &amp; limbah)
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-emerald-600">
+                {isDrainase ? "Jalur jaringan (2 titik) siap dibangun" : "Titik poligon siap dibangun"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {newBuildingPoints.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={removeLastBuildingPoint}
+                className="text-neutral-600 hover:text-neutral-900 border-neutral-200 cursor-pointer"
+              >
+                Urungkan
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetNewBuildingPoints}
+              className="text-neutral-600 hover:text-neutral-900 border-neutral-200 cursor-pointer"
+            >
+              Reset
+            </Button>
+            <Button
+              variant={pembangunanStatus.canBuild ? "green" : "outline"}
+              size="sm"
+              disabled={!pembangunanStatus.canBuild}
+              onClick={() => {
+                createNewBuilding();
+              }}
+              className={cn(
+                "box-shadow-custom font-bold px-4",
+                pembangunanStatus.canBuild
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed opacity-50 bg-neutral-200 text-neutral-500 border-neutral-300"
+              )}
+            >
+              <Check className="size-3.5 mr-1" />
+              Konfirmasi
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {buildMode === "relokasi" && selectedHouse && relocationTarget && (
+        <div className="fixed bottom-8 right-24 z-50 flex items-center gap-2 bg-white/95 backdrop-blur-sm p-2 pl-3.5 rounded-2xl border border-neutral-200 shadow-xl animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex flex-col pr-1">
+            <span className="text-body-5 font-medium text-neutral-500">Relokasi Rumah</span>
+            <span className="text-body-3 font-bold text-neutral-900">
+              {selectedHouse.name || `Rumah #${selectedHouse.id}`}
+            </span>
+            {relocationStatus.isOverlap ? (
+              <span className="text-[11px] font-semibold text-red-600">
+                Overlap bangunan ({relocationStatus.overlappingBuildingName || "lain"}): Tidak dapat dipindahkan
+              </span>
+            ) : relocationStatus.isNearRiver ? (
+              <span className="text-[11px] font-semibold text-amber-600">
+                Peringatan: Berjarak ≤ 3 meter dari bibir sungai
+              </span>
+            ) : relocationStatus.isNearTpa ? (
+              <span className="text-[11px] font-semibold text-purple-600">
+                Catatan: Dekat TPA (Tanpa akses air bersih &amp; limbah)
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold text-emerald-600">
+                Lokasi kosong valid &amp; siap dipindahkan
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setSelectedHouse(null)}
+              onClick={() => {
+                setRelocationTarget(null);
+                setRelocationStatus((prev) => ({
+                  ...prev,
+                  hasTarget: false,
+                  isOverlap: false,
+                  overlappingBuildingName: null,
+                  canRelocate: false,
+                }));
+              }}
               className="text-neutral-600 hover:text-neutral-900 border-neutral-200 cursor-pointer"
             >
-              Batal
+              Ganti Titik
             </Button>
             <Button
-              variant="green"
+              variant={relocationStatus.canRelocate ? "green" : "outline"}
               size="sm"
-              onClick={handleConfirmRekonstruksi}
-              className="box-shadow-custom font-bold px-4 cursor-pointer"
+              disabled={!relocationStatus.canRelocate}
+              onClick={handleConfirmRelokasi}
+              className={cn(
+                "box-shadow-custom font-bold px-4",
+                relocationStatus.canRelocate
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed opacity-50 bg-neutral-200 text-neutral-500 border-neutral-300"
+              )}
             >
               <Check className="size-3.5 mr-1" />
               Konfirmasi

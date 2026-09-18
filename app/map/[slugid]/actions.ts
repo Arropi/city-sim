@@ -24,11 +24,16 @@ export interface CityDetail {
   total_building_count?: number;
   total_building_area_sqm?: number;
   total_building_floor?: number;
+  total_floor_area_sqm?: number;
+  total_land_area_sqm?: number;
+  vertical_building_density?: number;
   total_green_space_area_sqm?: number;
   rtlh_safe_count?: number;
   rtlh_warning_count?: number;
   rtlh_alert_count?: number;
   rtlh_danger_count?: number;
+  river_count?: number;
+  rivers?: RiverData[];
   [key: string]: unknown;
 }
 
@@ -64,29 +69,18 @@ export interface CityGrid {
   created_at?: string;
 }
 
-export interface BuildingData {
-  id: string;
-  city_id: string;
-  grid_id: string;
-  name: string;
-  type_id: string;
-  type_name: string;
-  color_hex: string;
-  runoff_coef?: number;
-  unfit_pct?: number | null;
-  condition?: string | null;
-  building_levels?: number;
-  status?: string;
-  is_safe?: boolean;
-  rtlh?: number;
-  rtlh_count?: number;
-  rtlh_score?: number;
-  geom: {
-    type: string;
-    coordinates: unknown;
-  };
-  [key: string]: unknown;
-}
+import type { BuildingData, RiverData } from "@/types";
+
+export type {
+  ResidentialBuilding,
+  NonResidentialBuilding,
+  FacilityBuilding,
+  DiningBuilding,
+  GreenSpaceBuilding,
+  RawBuildingData,
+  BuildingData,
+  RiverData,
+} from "@/types";
 
 export async function getCityGrids(slugid: string): Promise<CityGrid[]> {
   try {
@@ -142,6 +136,7 @@ export interface UndergroundNetworkData {
   depth_m?: number | string | null;
   status?: "optimal" | "warning" | "maintenance" | string | null;
   flow_capacity_lps?: number | null;
+  service_radius?: number | null;
   geom: {
     type: string;
     coordinates: unknown;
@@ -202,4 +197,42 @@ export async function getCityNetworks(
     return [];
   }
 }
+
+export async function getCityRivers(slugid: string): Promise<RiverData[]> {
+  try {
+    const city = await getCityBoundaries(slugid);
+    return (city?.rivers || []) as RiverData[];
+  } catch (error) {
+    console.warn(`Gagal mengambil data sungai kota ${slugid}:`, error);
+    return [];
+  }
+}
+
+export async function getCities(): Promise<CityDetail[]> {
+  try {
+    const baseUrl = process.env.API_URL || "http://localhost:3005/api";
+    const res = await fetch(`${baseUrl}/cities/`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const fallback = await fetch(`${baseUrl}/cities`, {
+        cache: "no-store",
+      });
+      if (!fallback.ok) {
+        console.warn(`Gagal mengambil data daftar kota, status: ${res.status}`);
+        return [];
+      }
+      const json = await fallback.json();
+      return (json.data || []) as CityDetail[];
+    }
+
+    const json = await res.json();
+    return (json.data || []) as CityDetail[];
+  } catch (error) {
+    console.warn(`Gagal terhubung ke ${process.env.API_URL}/cities/:`, error);
+    return [];
+  }
+}
+
 

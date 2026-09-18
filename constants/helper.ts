@@ -105,9 +105,10 @@ export const MAP_ITEMS: MapItems[] = [
     data: {
       value: 78.4,
       initialValue: 78.4,
-      satuan: "percentage",
-      usingSpace: false,
-      boldSatuan: true,
+      satuan: "unit",
+      usingSpace: true,
+      boldSatuan: false,
+      mini: true,
     },
     initialValue: 78.4,
     description: "Kondisi jaringan drainase baik",
@@ -185,31 +186,47 @@ export const MAP_ITEMS: MapItems[] = [
   },
 ];
 
+export const DEFAULT_CITY_DETAIL: CityDetail = {
+  id: "madiun",
+  name: "Kota Madiun",
+  province: "Jawa Timur",
+  area_km2: 33.23,
+  unfit_housing_count: 17879,
+  residential_count: 71974,
+  facility_count: 320,
+  dining_count: 450,
+  green_space_count: 85,
+  total_building_count: 72744,
+  total_building_area_sqm: 8041660,
+  total_building_floor: 1,
+  total_floor_area_sqm: 609.46,
+  total_land_area_sqm: 33230000,
+  building_coverage_ratio: 24.2,
+  floor_area_ratio: 1.32,
+  vertical_building_density: 1.32,
+  total_green_space_area_sqm: 364746,
+  green_open_space_ratio: 1.1,
+  drainage_adequacy_ratio: 78.4,
+  waste_water_coverage: 69.5,
+  clean_water_access_ratio: 96.6,
+  hydrant_adequacy_ratio: 43.3,
+  population: 201733,
+  population_density: 6071,
+};
+
 export function buildMapItemsFromCity(
   cityData?: CityDetail | null
 ): MapItems[] {
-  if (!cityData) {
-    return MAP_ITEMS.map((item) => {
-      const val = item.data.value;
-      const initVal = item.data.initialValue ?? item.initialValue ?? val;
-      return {
-        ...item,
-        initialValue: initVal,
-        data: {
-          ...item.data,
-          value: val,
-          initialValue: initVal,
-        },
-      };
-    });
-  }
+  const data = cityData ? { ...DEFAULT_CITY_DETAIL, ...cityData } : DEFAULT_CITY_DETAIL;
 
-  const area = Number(cityData.area_km2) || 33.23;
-  const unfitCount = Number(cityData.unfit_housing_count) || 0;
-  const resCount = Number(cityData.residential_count) || 71974;
+  const area = Number(data.area_km2) || 33.23;
+  const totalLandAreaSqm =
+    Number(data.total_land_area_sqm) || area * 1_000_000;
+  const unfitCount = Number(data.unfit_housing_count) ?? 17879;
+  const resCount = Number(data.residential_count) || 71974;
   const totalBldCount =
-    Number(cityData.total_building_count) ||
-    resCount + (Number(cityData.facility_count) || 0) + (Number(cityData.dining_count) || 0);
+    Number(data.total_building_count) ||
+    resCount + (Number(data.facility_count) || 0) + (Number(data.dining_count) || 0);
 
   // 1. RTLH percentage: (unfit_housing_count / residential_count) * 100
   const rtlhPct =
@@ -218,10 +235,16 @@ export function buildMapItemsFromCity(
       : 24.8;
 
   // 2. Kepadatan Luas Bangunan (Coverage ratio / KDB): building_coverage_ratio
-  const kdb =
-    cityData.building_coverage_ratio != null
-      ? Number(parseFloat(String(cityData.building_coverage_ratio)).toFixed(1))
+  const totalBldAreaSqm = Number(data.total_building_area_sqm) || 8041660;
+  const calculatedKdb =
+    totalLandAreaSqm > 0
+      ? Number(((totalBldAreaSqm / totalLandAreaSqm) * 100).toFixed(1))
       : 24.2;
+
+  const kdb =
+    data.building_coverage_ratio != null
+      ? Number(parseFloat(String(data.building_coverage_ratio)).toFixed(1))
+      : calculatedKdb;
 
   // Perhitungan unit bangunan per km² pada dasar lahan kota: total_building_count / area_km2
   const unitsPerKm2 =
@@ -229,50 +252,69 @@ export function buildMapItemsFromCity(
       ? Math.round(totalBldCount / area).toLocaleString("id-ID")
       : "2.203";
 
-  // 3. Kepadatan Bangunan Vertikal: vertical_building_density
-  const verticalDensity =
-    cityData.vertical_building_density != null
-      ? Number(Number(cityData.vertical_building_density).toFixed(2))
+  // 3. Kepadatan Bangunan Vertikal / Floor Area Ratio (FAR / KLB):
+  // Rumus: (total_building_count x total_floor_area_sqm) / luas wilayah atau total land area sqm
+  const totalFloorAreaSqm =
+    Number(data.total_floor_area_sqm) ||
+    Number(data.total_building_area_sqm) ||
+    609.46;
+
+  const calculatedFar =
+    totalLandAreaSqm > 0
+      ? Number(((totalBldCount * totalFloorAreaSqm) / totalLandAreaSqm).toFixed(2))
       : 1.32;
 
+  const verticalDensity =
+    data.floor_area_ratio != null
+      ? Number(Number(data.floor_area_ratio).toFixed(2))
+      : data.vertical_building_density != null
+      ? Number(Number(data.vertical_building_density).toFixed(2))
+      : calculatedFar;
+
   // 4. Ruang Terbuka Hijau: green_open_space_ratio
-  const rthRatio =
-    cityData.green_open_space_ratio != null
-      ? Number(parseFloat(String(cityData.green_open_space_ratio)).toFixed(1))
+  const greenSpaceArea = Number(data.total_green_space_area_sqm) || 364746;
+  const calculatedRthRatio =
+    totalLandAreaSqm > 0
+      ? Number(((greenSpaceArea / totalLandAreaSqm) * 100).toFixed(1))
       : 1.1;
+
+  const rthRatio =
+    data.green_open_space_ratio != null
+      ? Number(parseFloat(String(data.green_open_space_ratio)).toFixed(1))
+      : calculatedRthRatio;
 
   // 5. Ketercukupan Saluran Drainase: drainage_adequacy_ratio
   const drainageRatio =
-    cityData.drainage_adequacy_ratio != null
-      ? Number(parseFloat(String(cityData.drainage_adequacy_ratio)).toFixed(1))
+    data.drainage_adequacy_ratio != null
+      ? Number(parseFloat(String(data.drainage_adequacy_ratio)).toFixed(1))
       : 78.4;
 
   // 6. Saluran Air Limbah: waste_water_coverage
   const wasteWaterRatio =
-    cityData.waste_water_coverage != null
-      ? Number(parseFloat(String(cityData.waste_water_coverage)).toFixed(1))
+    data.waste_water_coverage != null
+      ? Number(parseFloat(String(data.waste_water_coverage)).toFixed(1))
       : 69.5;
 
   // 7. Akses Air Bersih: clean_water_access_ratio
   const cleanWaterRatio =
-    cityData.clean_water_access_ratio != null
-      ? Number(parseFloat(String(cityData.clean_water_access_ratio)).toFixed(1))
+    data.clean_water_access_ratio != null
+      ? Number(parseFloat(String(data.clean_water_access_ratio)).toFixed(1))
       : 96.6;
 
   // 8. Ketercukupan Hydrant: hydrant_adequacy_ratio
   const hydrantRatio =
-    cityData.hydrant_adequacy_ratio != null
-      ? Number(parseFloat(String(cityData.hydrant_adequacy_ratio)).toFixed(1))
+    data.hydrant_adequacy_ratio != null
+      ? Number(parseFloat(String(data.hydrant_adequacy_ratio)).toFixed(1))
       : 43.3;
 
   // 9. Jumlah Penduduk: population (format ribuan dalam float / jiwa)
-  const popNumber = Number(cityData.population) || 201733;
+  const popNumber = Number(data.population) || 201733;
   const popValue = Number((popNumber / 1000).toFixed(3)); // 201.733
 
   // 10. Kepadatan Penduduk: population_density
   const popDensityNumber =
-    cityData.population_density != null
-      ? parseFloat(String(cityData.population_density))
+    data.population_density != null
+      ? parseFloat(String(data.population_density))
       : popNumber / area;
   const popDensityValue = Number((popDensityNumber / 1000).toFixed(3)); // 6.071
 
@@ -330,8 +372,8 @@ export function buildMapItemsFromCity(
         usingSpace: false,
       },
       initialValue: rthRatio,
-      description: cityData.total_green_space_area_sqm
-        ? `Luas ${Number(cityData.total_green_space_area_sqm).toLocaleString("id-ID")} m² RTH`
+      description: data.total_green_space_area_sqm
+        ? `Luas ${Number(data.total_green_space_area_sqm).toLocaleString("id-ID")} m² RTH`
         : "Persentase ruang terbuka hijau",
       srcIcon: "/icons/blues-home.svg",
     },
@@ -341,9 +383,9 @@ export function buildMapItemsFromCity(
       data: {
         value: drainageRatio,
         initialValue: drainageRatio,
-        satuan: "percentage",
-        usingSpace: false,
-        boldSatuan: true,
+        satuan: "unit",
+        usingSpace: true,
+        mini: true
       },
       initialValue: drainageRatio,
       description: "Kondisi jaringan drainase baik",
@@ -439,7 +481,7 @@ export const BUILDING_TYPE = [
   },
   {
     id: 'rusun',
-    label: 'Rumah Susun',
+    label: 'Rusun',
     layer: 'bangunan',
     category: 'Hunian',
     icon: 'Building',
@@ -450,6 +492,13 @@ export const BUILDING_TYPE = [
     layer: 'bangunan',
     category: 'Hunian',
     icon: 'Building2',
+  },
+  {
+    id: 'rth',
+    label: 'RTH',
+    layer: 'bangunan',
+    category: 'Hunian',
+    icon: 'Trees'
   },
   {
     id: 'tpa',
@@ -486,4 +535,24 @@ export const BUILDING_TYPE = [
     category: 'Infrastruktur',
     icon: 'Recycle',
   },
+  {
+    id: 'saluran-air-bersih',
+    label: 'Saluran Air Bersih',
+    layer: 'drainase',
+    category: 'Infrastruktur',
+    icon: 'WavePlus'
+  }
 ];
+
+export const isDrainaseType = (typeId?: string | null): boolean => {
+  if (!typeId) return false;
+  const bType = BUILDING_TYPE.find((item) => item.id === typeId);
+  return (
+    bType?.layer === "drainase" ||
+    typeId === "drainase" ||
+    typeId === "ipal" ||
+    typeId === "saluran-air-bersih" ||
+    typeId.includes("saluran") ||
+    typeId.includes("drainase")
+  );
+};
