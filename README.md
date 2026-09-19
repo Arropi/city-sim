@@ -60,8 +60,8 @@ Didukung oleh **Google Gemini API** (`@google/genai`) yang berperan sebagai *Ahl
 Portal survei partisipatif untuk pembaruan data kondisi rumah warga secara berkesinambungan:
 - **Geolokasi GPS Presisi**: Mengambil koordinat lintang dan bujur secara otomatis menggunakan Browser Geolocation API.
 - **Identitas Pemilik & Fisik Bangunan**: Pendataan Nama Pemilik, NIK, Alamat lengkap, dan deskripsi kondisi fisik bangunan.
-- **Dokumentasi Visual**: Pengunggahan foto fisik rumah (format JPG, JPEG, PNG hingga 5MB) dengan pratinjau langsung.
-- **Integrasi Laporan**: Data diteruskan ke backend API untuk diverifikasi dan dimasukkan ke dalam basis data spasial kota.
+- **Dokumentasi Visual (Supabase Storage)**: Pengunggahan foto fisik rumah (format JPG, JPEG, PNG hingga 5MB) dengan pratinjau langsung, yang disimpan ke dalam Supabase Storage.
+- **Integrasi Laporan**: Data formulir diteruskan ke backend API untuk diverifikasi, berkas foto diunggah ke Supabase Storage, dan informasi koordinat serta pemilik dimasukkan ke basis data spasial kota.
 
 ### 5. Standar & Regulasi Pembangunan (`/informasi`)
 Halaman referensi terpusat mengenai panduan teknis dan regulasi perumahan:
@@ -78,7 +78,7 @@ Halaman referensi terpusat mengenai panduan teknis dan regulasi perumahan:
 ```mermaid
 flowchart TD
     subgraph Client ["Frontend (Next.js 16 + React 19)"]
-        UI["Landing & Carousel Kota (/)]"]
+        UI["Landing & Carousel Kota (/)"]
         Map["Leaflet Map Engine (/map/[slugid])"]
         Info["Standar Pembangunan (/informasi)"]
         Survey["Form Pendataan GPS (/pendataan)"]
@@ -96,6 +96,10 @@ flowchart TD
         Gemini["Google Gemini API (Spatial Urban Planner)"]
     end
 
+    subgraph CloudStorage ["Cloud Object Storage"]
+        Supabase[("Supabase Storage (Foto & Dokumen Pendataan)")]
+    end
+
     subgraph Backend ["Backend Services"]
         Elysia["Elysia.js (Bun Runtime API Server)"]
         Postgres[("PostgreSQL Database")]
@@ -105,6 +109,8 @@ flowchart TD
 
     Overpass -->|Import Polygons & Lines| PostGIS
     Client <-->|REST API / GeoJSON Grids| Elysia
+    Survey -->|Submit Laporan & Foto Survei| Elysia
+    Elysia -->|Upload & Simpan Berkas Foto| Supabase
     Elysia <-->|Spatial Queries / ST_Intersects| PostGIS
     Map <-->|Autosave & Hydration| IDB
     Map <--> Context
@@ -127,11 +133,16 @@ flowchart TD
    - Data spasial disimpan dalam format geometri PostGIS (`GEOMETRY(Polygon, 4326)` dan `GEOMETRY(LineString, 4326)`).
    - Memanfaatkan *Spatial Indexing* (GiST / R-Tree) untuk pemotongan data per grid wilayah kota (`grids/by-city/:slugid`), meminimalkan beban transfer memori ke client.
 
-4. **Data Acquisition Pipeline (OSM Overpass-Turbo)**:
+4. **Cloud Object Storage (Supabase Storage)**:
+   - Digunakan sebagai media penampung dan pengelola berkas digital untuk modul pendataan (`/pendataan`).
+   - Menerima dan menyimpan dokumentasi foto kondisi fisik rumah warga/RTLH secara aman, andal, dan terukur.
+   - Menyediakan tautan URL publik berkas gambar yang berelasi langsung dengan metadata laporan dan koordinat spasial di database.
+
+5. **Data Acquisition Pipeline (OSM Overpass-Turbo)**:
    - Data batas kota, poligon tapak bangunan (*building footprints*), kontur sungai, dan jaringan jalan diekstraksi dari **OpenStreetMap** melalui query **Overpass-Turbo**.
    - Data GeoJSON hasil ekstraksi dinormalisasi dan diimpor ke basis data PostGIS.
 
-5. **AI Inference Layer**:
+6. **AI Inference Layer**:
    - Next.js Route Handler (`/api/ai-recommendation`) berkomunikasi dengan **Gemini API** menggunakan SDK `@google/genai`.
    - Prompt rekayasa spasial menyertakan ringkasan indikator kota, centroid bangunan, sebaran saluran air limbah, dan sempadan sungai untuk menghasilkan rekomendasi terstruktur.
 
@@ -149,6 +160,7 @@ flowchart TD
 | **Runtime & Package Manager** | [Bun](https://bun.sh/) | Runtime JS/TS berkecepatan tinggi |
 | **Backend Framework** | [Elysia.js](https://elysiajs.com/) | Framework backend performa tinggi berbasis Bun |
 | **Database** | [PostgreSQL](https://www.postgresql.org/) + [PostGIS](https://postgis.net/) | Manajemen basis data relasional & analisis spasial |
+| **Cloud Storage** | [Supabase Storage](https://supabase.com/storage) | Penyimpanan objek & foto dokumentasi pendataan lapangan |
 | **Sumber Data Spasial** | [OpenStreetMap](https://www.openstreetmap.org/) (Overpass-Turbo) | Ekstraksi tapak bangunan & geodatas |
 
 ---
