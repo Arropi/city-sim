@@ -585,3 +585,65 @@ export function getBuildingPositions(b: BuildingData): CityBoundaries | null {
   (b as unknown as { _parsedPositions?: CityBoundaries | null })._parsedPositions = pos;
   return pos;
 }
+
+/**
+ * Menghitung bounding box [[minLat, minLng], [maxLat, maxLng]] dari CityBoundaries.
+ */
+export function getBoundsFromBoundaries(
+  boundaries: CityBoundaries | null | undefined,
+  paddingPercent = 0.03
+): [[number, number], [number, number]] | null {
+  if (!boundaries || !Array.isArray(boundaries) || boundaries.length === 0) return null;
+
+  let minLat = 90;
+  let maxLat = -90;
+  let minLng = 180;
+  let maxLng = -180;
+  let count = 0;
+
+  const traverse = (item: unknown) => {
+    if (!Array.isArray(item)) return;
+    if (
+      item.length >= 2 &&
+      typeof item[0] === "number" &&
+      typeof item[1] === "number"
+    ) {
+      const lat = item[0];
+      const lng = item[1];
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      count++;
+      return;
+    }
+    item.forEach(traverse);
+  };
+
+  traverse(boundaries);
+
+  if (count === 0) return null;
+
+  const padLat = (maxLat - minLat) * paddingPercent || 0.01;
+  const padLng = (maxLng - minLng) * paddingPercent || 0.01;
+
+  return [
+    [minLat - padLat, minLng - padLng],
+    [maxLat + padLat, maxLng + padLng],
+  ];
+}
+
+/**
+ * Menghitung titik tengah centroid [lat, lng] dari CityBoundaries.
+ */
+export function getCenterFromBoundaries(
+  boundaries: CityBoundaries | null | undefined
+): [number, number] | null {
+  const bounds = getBoundsFromBoundaries(boundaries, 0);
+  if (!bounds) return null;
+  return [
+    (bounds[0][0] + bounds[1][0]) / 2,
+    (bounds[0][1] + bounds[1][1]) / 2,
+  ];
+}
+

@@ -6,8 +6,9 @@ import BackButton from "@/modules/pendataan/back-button";
 export default function Page() {
   return (
     <div className="flex flex-col">
-      <div className="px-4 pt-4 w-fit">
+      <div className="px-4 pt-4 w-fit flex flex-col gap-3">
         <BackButton />
+        <h1 className=" text-heading-6 font-bold">INFORMASI PERUMAHAN</h1>
       </div>
       <div className="h-screen px-4 py-2 grid grid-cols-1 md:grid-cols-10 gap-4">
         {/* Kolom Kiri: 6/10 dari lebar grid, tetap / tidak scroll */}

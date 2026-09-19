@@ -45,6 +45,133 @@ export const MADIUN_GEO = {
   },
 };
 
+export interface CityCoordConfig {
+  center: [number, number];
+  bounds: [[number, number], [number, number]];
+  boundaries?: [number, number][];
+  name: string;
+  province: string;
+  area_km2: number;
+}
+
+export const CITY_CENTERS: Record<string, [number, number]> = {
+  madiun: MADIUN_GEO.CENTER, // [-7.62988, 111.53260]
+  kediri: [-7.8228, 112.0119],
+  mojokerto: [-7.4726, 112.4381],
+  pasuruan: [-7.6453, 112.9075],
+};
+
+export const CITY_BOUNDS: Record<string, [[number, number], [number, number]]> = {
+  madiun: MADIUN_GEO.BOUNDS,
+  kediri: [
+    [-7.8750, 111.9650],
+    [-7.7650, 112.0650],
+  ],
+  mojokerto: [
+    [-7.5050, 112.4050],
+    [-7.4400, 112.4750],
+  ],
+  pasuruan: [
+    [-7.6850, 112.8650],
+    [-7.6050, 112.9550],
+  ],
+};
+
+export const CITY_COORDINATES: Record<string, CityCoordConfig> = {
+  madiun: {
+    center: CITY_CENTERS.madiun,
+    bounds: CITY_BOUNDS.madiun,
+    name: "Kota Madiun",
+    province: "Jawa Timur",
+    area_km2: 33.23,
+    boundaries: [
+      [-7.5950, 111.5300],
+      [-7.6050, 111.5600],
+      [-7.6350, 111.5664],
+      [-7.6600, 111.5450],
+      [-7.6649, 111.5150],
+      [-7.6400, 111.4988],
+      [-7.6100, 111.5050],
+    ],
+  },
+  kediri: {
+    center: CITY_CENTERS.kediri,
+    bounds: CITY_BOUNDS.kediri,
+    name: "Kota Kediri",
+    province: "Jawa Timur",
+    area_km2: 63.40,
+    boundaries: [
+      [-7.7700, 112.0000],
+      [-7.7850, 112.0450],
+      [-7.8200, 112.0550],
+      [-7.8550, 112.0400],
+      [-7.8650, 112.0100],
+      [-7.8500, 111.9750],
+      [-7.8100, 111.9700],
+      [-7.7750, 111.9850],
+    ],
+  },
+  mojokerto: {
+    center: CITY_CENTERS.mojokerto,
+    bounds: CITY_BOUNDS.mojokerto,
+    name: "Kota Mojokerto",
+    province: "Jawa Timur",
+    area_km2: 20.21,
+    boundaries: [
+      [-7.4450, 112.4350],
+      [-7.4550, 112.4650],
+      [-7.4800, 112.4680],
+      [-7.4980, 112.4450],
+      [-7.4950, 112.4180],
+      [-7.4680, 112.4150],
+      [-7.4480, 112.4250],
+    ],
+  },
+  pasuruan: {
+    center: CITY_CENTERS.pasuruan,
+    bounds: CITY_BOUNDS.pasuruan,
+    name: "Kota Pasuruan",
+    province: "Jawa Timur",
+    area_km2: 35.29,
+    boundaries: [
+      [-7.6150, 112.8950],
+      [-7.6200, 112.9400],
+      [-7.6500, 112.9480],
+      [-7.6750, 112.9300],
+      [-7.6780, 112.8850],
+      [-7.6500, 112.8720],
+      [-7.6220, 112.8800],
+    ],
+  },
+};
+
+export const CENTER = CITY_CENTERS;
+
+export function buildMapCityHref(
+  cityId: string,
+  center?: [number, number],
+  bounds?: [[number, number], [number, number]]
+): string {
+  const coord = CITY_COORDINATES[cityId.toLowerCase()];
+  const finalCenter = center || coord?.center;
+  const finalBounds = bounds || coord?.bounds;
+
+  const params = new URLSearchParams();
+  if (finalCenter) {
+    params.set("lat", String(finalCenter[0]));
+    params.set("lng", String(finalCenter[1]));
+  }
+  if (finalBounds) {
+    params.set("minLat", String(finalBounds[0][0]));
+    params.set("minLng", String(finalBounds[0][1]));
+    params.set("maxLat", String(finalBounds[1][0]));
+    params.set("maxLng", String(finalBounds[1][1]));
+  }
+
+  const query = params.toString();
+  return query ? `/map/${cityId}?${query}` : `/map/${cityId}`;
+}
+
 export const MAP_ITEMS: MapItems[] = [
   {
     id: "rtlh",

@@ -68,7 +68,7 @@ function ViewContent() {
               </ItemMedia>
               <ItemContent className="gap-0">
                 <ItemTitle className="flex flex-col items-start gap-0.5 line-clamp-none w-full">
-                  <span className="text-body-3 font-semibold text-neutral-900 leading-none">
+                  <span className="text-body-4 font-semibold text-neutral-900 leading-none">
                     {item_ringkasan.name}
                   </span>
                   <h1 className="text-heading-7 font-bold text-neutral-1000">

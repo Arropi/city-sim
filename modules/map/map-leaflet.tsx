@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { Map as LeafletMapType } from "leaflet";
@@ -19,6 +19,8 @@ import {
   checkBuildingOverlap,
   checkRiverProximity,
   checkTpaProximity,
+  getBoundsFromBoundaries,
+  getCenterFromBoundaries,
 } from "@/lib/spatial-utils";
 
 // Fix default marker icon issue in Next.js / Leaflet
@@ -38,6 +40,8 @@ interface LeafleatMapProps {
   cityGrids?: CityGrid[];
   drainase?: UndergroundNetworkData[];
   rivers?: RiverData[];
+  center?: [number, number];
+  bounds?: [[number, number], [number, number]];
 }
 
 function MapBuildClickHandler() {
@@ -118,10 +122,70 @@ export default function LeafletMap({
   cityGrids,
   drainase,
   rivers,
+  center,
+  bounds,
 }: LeafleatMapProps) {
   const [map, setMap] = useState<LeafletMapType | null>(null);
   const fetchedGridIdsRef = useRef<Set<string>>(new Set());
   const { setMainMap, buildings, setBuildings, setCityGrids, setDrainase, setRivers } = useMapContext();
+
+  // Hitung effectiveCenter secara fleksibel sesuai prop center atau boundariesCity
+  const effectiveCenter = useMemo<[number, number]>(() => {
+    if (
+      center &&
+      Array.isArray(center) &&
+      center.length === 2 &&
+      !isNaN(center[0]) &&
+      !isNaN(center[1])
+    ) {
+      return center;
+    }
+    if (boundariesCity) {
+      const computed = getCenterFromBoundaries(boundariesCity);
+      if (computed) return computed;
+    }
+    return MADIUN_GEO.CENTER;
+  }, [center, boundariesCity]);
+
+  // Hitung effectiveBounds secara fleksibel sesuai batasan kota
+  const effectiveBounds = useMemo<[[number, number], [number, number]]>(() => {
+    if (bounds && Array.isArray(bounds) && bounds.length === 2) {
+      return bounds;
+    }
+    if (boundariesCity) {
+      const computed = getBoundsFromBoundaries(boundariesCity);
+      if (computed) return computed;
+    }
+    return MADIUN_GEO.BOUNDS;
+  }, [bounds, boundariesCity]);
+
+  // Poligon batas kota yang ditampilkan dengan garis biru
+  const effectiveBoundaries = useMemo<CityBoundaries | null>(() => {
+    if (boundariesCity && Array.isArray(boundariesCity) && boundariesCity.length > 0) {
+      return boundariesCity;
+    }
+    if (effectiveBounds) {
+      return [
+        [effectiveBounds[0][0], effectiveBounds[0][1]],
+        [effectiveBounds[1][0], effectiveBounds[0][1]],
+        [effectiveBounds[1][0], effectiveBounds[1][1]],
+        [effectiveBounds[0][0], effectiveBounds[1][1]],
+      ];
+    }
+    return null;
+  }, [boundariesCity, effectiveBounds]);
+
+  // Sinkronkan batas maksimal peta (maxBounds) agar tidak keluar kota
+  useEffect(() => {
+    if (!map || !effectiveBounds) return;
+    map.setMaxBounds(effectiveBounds);
+  }, [map, effectiveBounds]);
+
+  // Sinkronkan view kamera saat center berubah
+  useEffect(() => {
+    if (!map || !effectiveCenter) return;
+    map.setView(effectiveCenter, map.getZoom() || MADIUN_GEO.DEFAULT_ZOOM);
+  }, [map, effectiveCenter]);
 
   useEffect(() => {
     if (rivers && rivers.length > 0) {
@@ -242,13 +306,14 @@ export default function LeafletMap({
   return (
     <section className="relative w-full h-screen max-w-full overflow-hidden">
       <MapContainer
+        key={`${effectiveCenter[0]}_${effectiveCenter[1]}`}
         ref={setMap}
-        center={MADIUN_GEO.CENTER}
+        center={effectiveCenter}
         zoom={MADIUN_GEO.DEFAULT_ZOOM}
         minZoom={MADIUN_GEO.MIN_ZOOM}
         maxZoom={MADIUN_GEO.MAX_ZOOM}
-        maxBounds={MADIUN_GEO.BOUNDS}
-        maxBoundsViscosity={1.0} // Mengunci peta agar tidak bisa digeser keluar batas resmi Kota Madiun
+        maxBounds={effectiveBounds}
+        maxBoundsViscosity={1.0} // Mengunci peta agar tidak bisa digeser keluar batasan kota yang fleksibel
         zoomControl={false}
         preferCanvas={true} // Akselerasi grafis HTML5 Canvas untuk ribuan poligon
         className="w-full h-full z-0 cursor-crosshair"
@@ -259,13 +324,13 @@ export default function LeafletMap({
         />
         <MapBuildClickHandler />
         <LayerPanel buildings={buildings} drainase={drainase} rivers={rivers} />
-        {boundariesCity && boundariesCity.length > 0 && (
+        {effectiveBoundaries && effectiveBoundaries.length > 0 && (
           <GridBuilding
             type="polygon"
             buildings={"residential"}
             popup={false}
             props={{
-              positions: boundariesCity,
+              positions: effectiveBoundaries,
               color: "#2563eb",
               fill: false,
               weight: 3.0,

@@ -116,7 +116,7 @@ export default function TopPanel() {
           Informasi Perumahan
         </Button>
       </Link>
-      <Link href={"/pengaduan"}>
+      <Link href={"/pendataan"}>
         <Button
           className={
             "bg-white box-shadow-custom border-none text-body-3 font-normal hover:bg-neutral-200"
@@ -129,7 +129,7 @@ export default function TopPanel() {
             src={"/icons/notepad.svg"}
             className="size-4 text-accent-400"
           />
-          Pengaduan
+          Pendataan
         </Button>
       </Link>
     </section>
