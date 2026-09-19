@@ -25,14 +25,14 @@ interface SubItemProps {
 function SubColumn({ title, items }: SubItemProps) {
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="font-bold text-xs md:text-sm text-black">{title}</h3>
+      <h3 className="font-bold text-body-4 md:text-sm text-black">{title}</h3>
       <div className="flex flex-col gap-1.5">
         {items.map((text, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 text-xs text-neutral-600"
+            className="flex items-center gap-2 text-body-4 font-normal text-neutral-800"
           >
-            <ArrowRight className="size-3.5 text-neutral-500 shrink-0" />
+            <ArrowRight className="size-3.5 text-neutral-800 shrink-0" />
             <span>{text}</span>
           </div>
         ))}
@@ -246,7 +246,7 @@ const ACCORDION_ITEMS = [
 export default function PrasaranaUtilitasUtama() {
   return (
     <div className="">
-      <h1 className="font-bold text-lg mb-3">Prasarana Utilitas Utama</h1>
+      <h1 className="font-bold text-body-4 mb-3">Prasarana Utilitas Utama</h1>
       <Accordion
         multiple
         defaultValue={["item-a"]}
@@ -255,7 +255,7 @@ export default function PrasaranaUtilitasUtama() {
         {ACCORDION_ITEMS.map((item) => (
           <AccordionItem key={item.id} value={item.id} className="border-none">
             <AccordionTrigger className="w-full bg-white hover:bg-neutral-50 transition-colors border-none box-shadow-custom lg:py-2.5 px-4 py-3 rounded-xl hover:no-underline items-center cursor-pointer">
-              <ItemTitle className="text-body-3 font-black text-black">
+              <ItemTitle className="text-body-3 font-bold text-black">
                 {item.title}
               </ItemTitle>
             </AccordionTrigger>
@@ -271,10 +271,10 @@ export default function PrasaranaUtilitasUtama() {
           <Info className="size-5 text-primary-500 shrink-0" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle className="font-bold text-sm text-neutral-900">
+          <ItemTitle className="font-bold text-body-4 text-primary-500">
             Catatan Penting
           </ItemTitle>
-          <ItemDescription className="text-xs text-neutral-700 line-clamp-none">
+          <ItemDescription className="text-xs text-neutral-800 line-clamp-none">
             Seluruh persyaratan di atas mengacu pada Rencana Detail Tata Ruang
             Wilayah, Rencana Tata Bangunan dan Lingkungan, serta peraturan yang
             berlaku.

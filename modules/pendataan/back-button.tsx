@@ -13,7 +13,7 @@ export default function BackButton() {
       variant={"orange"}
       size={"sm"}
     >
-      <ArrowLeft /> Back
+      <ArrowLeft /> Kembali
     </Button>
   );
 }

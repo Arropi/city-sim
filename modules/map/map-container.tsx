@@ -14,11 +14,15 @@ export function MapContainer({
   cityGrids,
   drainase,
   rivers,
+  center,
+  bounds,
 }: {
   boundariesCity?: CityBoundaries | null;
   cityGrids?: CityGrid[];
   drainase?: UndergroundNetworkData[];
   rivers?: RiverData[];
+  center?: [number, number];
+  bounds?: [[number, number], [number, number]];
 }) {
   return (
     <MapDynamicLeaflet
@@ -26,6 +30,8 @@ export function MapContainer({
       cityGrids={cityGrids}
       drainase={drainase}
       rivers={rivers}
+      center={center}
+      bounds={bounds}
     />
   );
 }

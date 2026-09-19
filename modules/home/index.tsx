@@ -7,6 +7,23 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import { getCities, type CityDetail } from "@/app/map/[slugid]/actions";
 import { formatDensity } from "@/lib/utils";
+import {
+  CITY_CENTERS,
+  CITY_BOUNDS,
+  CITY_COORDINATES,
+  CENTER,
+  buildMapCityHref,
+  type CityCoordConfig,
+} from "@/constants/helper";
+
+export {
+  CITY_CENTERS,
+  CITY_BOUNDS,
+  CITY_COORDINATES,
+  CENTER,
+  buildMapCityHref,
+  type CityCoordConfig,
+};
 
 const CITY_IMAGES: Record<string, string> = {
   madiun:
@@ -28,7 +45,9 @@ const DUMMY_CITIES: CarouselCardItem[] = [
     title: "Kota Madiun",
     subtitle: "Kota Madiun, Jawa Timur",
     image: CITY_IMAGES.madiun,
-    href: "/map/madiun",
+    href: buildMapCityHref("madiun", CITY_CENTERS.madiun, CITY_BOUNDS.madiun),
+    center: CITY_CENTERS.madiun,
+    bounds: CITY_BOUNDS.madiun,
     rtlhPercentage: 30.3,
     density: "6.071k jiwa",
   },
@@ -37,7 +56,9 @@ const DUMMY_CITIES: CarouselCardItem[] = [
     title: "Kota Kediri",
     subtitle: "Kota Kediri, Jawa Timur",
     image: CITY_IMAGES.kediri,
-    href: "/map/kediri",
+    href: buildMapCityHref("kediri", CITY_CENTERS.kediri, CITY_BOUNDS.kediri),
+    center: CITY_CENTERS.kediri,
+    bounds: CITY_BOUNDS.kediri,
     rtlhPercentage: 12.9,
     density: "4.295k jiwa",
   },
@@ -46,7 +67,9 @@ const DUMMY_CITIES: CarouselCardItem[] = [
     title: "Kota Mojokerto",
     subtitle: "Kota Mojokerto, Jawa Timur",
     image: CITY_IMAGES.mojokerto,
-    href: "/map/mojokerto",
+    href: buildMapCityHref("mojokerto", CITY_CENTERS.mojokerto, CITY_BOUNDS.mojokerto),
+    center: CITY_CENTERS.mojokerto,
+    bounds: CITY_BOUNDS.mojokerto,
     rtlhPercentage: 109.1,
     density: "6.887k jiwa",
   },
@@ -55,7 +78,9 @@ const DUMMY_CITIES: CarouselCardItem[] = [
     title: "Kota Pasuruan",
     subtitle: "Kota Pasuruan, Jawa Timur",
     image: CITY_IMAGES.pasuruan,
-    href: "/map/pasuruan",
+    href: buildMapCityHref("pasuruan", CITY_CENTERS.pasuruan, CITY_BOUNDS.pasuruan),
+    center: CITY_CENTERS.pasuruan,
+    bounds: CITY_BOUNDS.pasuruan,
     rtlhPercentage: 10.7,
     density: "5.297k jiwa",
   },
@@ -98,6 +123,13 @@ export default function Home({ initialCities }: HomeProps) {
 
       const density = formatDensity(city.population_density);
 
+      const coordConfig = CITY_COORDINATES[city.id.toLowerCase()];
+      const center =
+        (city.center as [number, number]) || coordConfig?.center;
+      const bounds =
+        (city.bounds as [[number, number], [number, number]]) || coordConfig?.bounds;
+      const href = buildMapCityHref(city.id, center, bounds);
+
       return {
         id: city.id,
         title: city.name,
@@ -109,7 +141,9 @@ export default function Home({ initialCities }: HomeProps) {
           (city.image as string) ||
           CITY_IMAGES[city.id] ||
           DEFAULT_IMAGE,
-        href: `/map/${city.id}`,
+        href,
+        center,
+        bounds,
         rtlhPercentage,
         density,
       };
