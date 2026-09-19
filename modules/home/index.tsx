@@ -173,10 +173,10 @@ export default function Home({ initialCities }: HomeProps) {
           className="w-56 sm:w-64 h-auto mb-1"
         />
         <h1 className="text-heading-6 sm:text-heading-5 font-bold text-neutral-900">
-          Meh liat mana?
+          Ayo, Coba Simulasikan Kotamu!
         </h1>
         <p className="text-body-3 sm:text-heading-7 font-normal text-neutral-600">
-          Cari wilayah untuk melihat kondisi dan informasi perumahan
+          Cari wilayah untuk melihat kondisi dan informasi pemukiman
         </p>
         <div className="relative w-full max-w-md mt-2">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400 pointer-events-none" />
